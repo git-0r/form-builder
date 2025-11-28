@@ -20,7 +20,7 @@ const columnHelper = createColumnHelper<Submission>();
 
 export function SubmissionsTable() {
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
@@ -96,7 +96,7 @@ export function SubmissionsTable() {
 
   return (
     <>
-      <Card className="overflow-hidden border-slate-200 shadow-sm shadow-slate-200/40 rounded-xl bg-white py-0">
+      <Card className="overflow-hidden border-slate-200 shadow-slate-200/40 rounded-xl bg-white py-0">
         <div className="p-0">
           {isLoading ? (
             <div className="flex h-64 items-center justify-center bg-slate-50/50">
@@ -168,8 +168,13 @@ export function SubmissionsTable() {
         <Pagination
           page={page}
           totalPages={response?.meta.totalPages || 1}
+          limit={limit}
           isLoading={isLoading}
           onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       </Card>
 

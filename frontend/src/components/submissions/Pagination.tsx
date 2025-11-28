@@ -1,24 +1,56 @@
 import { Button } from "../ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface PaginationProps {
   page: number;
   totalPages: number;
+  limit: number;
   isLoading: boolean;
   onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }
 
 export function Pagination({
   page,
   totalPages,
+  limit,
   isLoading,
   onPageChange,
+  onLimitChange,
 }: PaginationProps) {
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4">
-      <div className="text-sm text-slate-500 font-medium">
-        Page <span className="text-slate-900">{page}</span> of{" "}
-        <span className="text-slate-900">{totalPages || 1}</span>
+    <div className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4 gap-4">
+      <div className="flex items-center gap-6">
+        <div className="text-sm text-slate-500 font-medium">
+          Page <span className="text-slate-900">{page}</span> of{" "}
+          <span className="text-slate-900">{totalPages || 1}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500 hidden sm:inline">
+            Rows per page:
+          </span>
+          <Select
+            value={String(limit)}
+            onValueChange={(val) => onLimitChange(Number(val))}
+          >
+            <SelectTrigger className="h-8 w-[70px] bg-white border-slate-300 focus:ring-violet-500">
+              <SelectValue placeholder={limit} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex gap-2">
