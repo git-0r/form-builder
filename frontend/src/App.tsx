@@ -1,7 +1,8 @@
 import "./App.css";
+import Form from "./components/onboarding-form";
 
 function App() {
-  return <h1>Hello World!</h1>;
+  return <Form />;
 }
 
 export default App;

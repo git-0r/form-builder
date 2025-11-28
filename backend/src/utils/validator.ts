@@ -1,9 +1,17 @@
 import { z } from "zod";
 
-export const generateZodSchema = (schema: any[]) => {
+export const generateZodSchema = (schema: any) => {
   const shape: any = {};
 
-  schema.forEach((field) => {
+  const fields = Array.isArray(schema) ? schema : schema.fields;
+
+  if (!fields || !Array.isArray(fields)) {
+    throw new Error(
+      "Validator Error: Invalid schema format. Expected an array of fields or an object with a 'fields' property."
+    );
+  }
+
+  fields.forEach((field: any) => {
     let validator: any;
 
     switch (field.type) {
@@ -24,7 +32,7 @@ export const generateZodSchema = (schema: any[]) => {
       case "switch":
         validator = z.boolean();
         break;
-      default: // text, select, date, textarea
+      default:
         validator = z.string();
         if (field.validation?.minLength)
           validator = validator.min(field.validation.minLength);
@@ -47,7 +55,7 @@ export const generateZodSchema = (schema: any[]) => {
       validator = validator.optional().or(z.literal(""));
     }
 
-    shape[field.id] = validator;
+    shape[field.name] = validator;
   });
 
   return z.object(shape);
