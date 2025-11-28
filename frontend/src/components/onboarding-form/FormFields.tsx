@@ -20,25 +20,37 @@ import type {
   TextFieldSchema,
 } from "../../types/schema";
 
+const getSharpInputClasses = (hasError: boolean) =>
+  `rounded-none border-zinc-200 bg-transparent px-3 py-2 text-sm shadow-none transition-colors 
+   placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 
+   disabled:cursor-not-allowed disabled:opacity-50
+   ${
+     hasError
+       ? "border-red-500 focus-visible:ring-red-500"
+       : "hover:border-zinc-300"
+   }`;
+
 const FieldInfo = ({ schema }: { schema: FormFieldSchema }) => {
   const field = useFieldContext();
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <>
+    <div className="flex items-baseline justify-between mb-2">
       <Label
         htmlFor={schema.name}
-        className={`mb-2 ${hasError ? "text-destructive" : ""}`}
+        className={`text-xs font-medium uppercase tracking-wider text-zinc-500 ${
+          hasError ? "text-red-500" : ""
+        }`}
       >
-        {schema.label}{" "}
-        {schema.required && <span className="text-destructive">*</span>}
+        {schema.label}
+        {schema.required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>
       {hasError && (
-        <p className="text-[0.8rem] font-medium text-destructive mt-1 animate-in slide-in-from-top-1">
+        <span className="text-[10px] font-medium text-red-500 uppercase tracking-wide">
           {field.state.meta.errors.join(", ")}
-        </p>
+        </span>
       )}
-    </>
+    </div>
   );
 };
 
@@ -48,9 +60,10 @@ export function TextField({
   schema: TextFieldSchema | DateFieldSchema;
 }) {
   const field = useFieldContext<string>();
+  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex flex-col mb-4">
+    <div className="group mb-6">
       <FieldInfo schema={schema} />
       <Input
         type={
@@ -63,9 +76,7 @@ export function TextField({
         value={field.state.value ?? ""}
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
-        className={
-          field.state.meta.errors.length ? "border-destructive mt-1" : "mt-1"
-        }
+        className={getSharpInputClasses(hasError)}
       />
     </div>
   );
@@ -73,9 +84,10 @@ export function TextField({
 
 export function TextAreaField({ schema }: { schema: TextFieldSchema }) {
   const field = useFieldContext<string>();
+  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex flex-col mb-4">
+    <div className="group mb-6">
       <FieldInfo schema={schema} />
       <Textarea
         id={schema.name}
@@ -83,9 +95,9 @@ export function TextAreaField({ schema }: { schema: TextFieldSchema }) {
         value={field.state.value ?? ""}
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
-        className={
-          field.state.meta.errors.length ? "border-destructive mt-1" : "mt-1"
-        }
+        className={`${getSharpInputClasses(
+          hasError
+        )} min-h-[120px] resize-none`}
       />
     </div>
   );
@@ -93,9 +105,10 @@ export function TextAreaField({ schema }: { schema: TextFieldSchema }) {
 
 export function NumberField({ schema }: { schema: NumberFieldSchema }) {
   const field = useFieldContext<number | undefined>();
+  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex flex-col mb-4">
+    <div className="group mb-6">
       <FieldInfo schema={schema} />
       <Input
         type="number"
@@ -111,9 +124,7 @@ export function NumberField({ schema }: { schema: NumberFieldSchema }) {
           const val = e.target.value;
           field.handleChange(val === "" ? undefined : Number(val));
         }}
-        className={
-          field.state.meta.errors.length ? "border-destructive mt-1" : "mt-1"
-        }
+        className={getSharpInputClasses(hasError)}
       />
     </div>
   );
@@ -121,55 +132,61 @@ export function NumberField({ schema }: { schema: NumberFieldSchema }) {
 
 export function SwitchField({ schema }: { schema: SwitchFieldSchema }) {
   const field = useFieldContext<boolean>();
+  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex flex-col mb-4">
-      <div className="flex items-center space-x-2 mt-1">
-        <Switch
-          id={schema.name}
-          checked={!!field.state.value}
-          onCheckedChange={field.handleChange}
-        />
-        <Label htmlFor={schema.name} className="font-normal cursor-pointer">
+    <div className="group mb-6 flex items-center justify-between border-b border-zinc-100 pb-4">
+      <div className="space-y-1">
+        <Label
+          htmlFor={schema.name}
+          className={`text-sm font-medium text-zinc-900 ${
+            hasError ? "text-red-500" : ""
+          }`}
+        >
           {schema.label}
         </Label>
+        {hasError && (
+          <p className="text-[10px] font-medium text-red-500 uppercase tracking-wide">
+            {field.state.meta.errors.join(", ")}
+          </p>
+        )}
       </div>
-      {field.state.meta.errors.length > 0 && (
-        <p className="text-[0.8rem] font-medium text-destructive mt-1">
-          {field.state.meta.errors.join(", ")}
-        </p>
-      )}
+      <Switch
+        id={schema.name}
+        checked={!!field.state.value}
+        onCheckedChange={field.handleChange}
+        className="data-[state=checked]:bg-zinc-900"
+      />
     </div>
   );
 }
 
 export function SelectField({ schema }: { schema: TextFieldSchema }) {
   const field = useFieldContext<string>();
+  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex flex-col mb-4">
+    <div className="group mb-6">
       <FieldInfo schema={schema} />
-      <div className="mt-1">
-        <Select
-          value={field.state.value ?? ""}
-          onValueChange={field.handleChange}
-        >
-          <SelectTrigger
-            className={
-              field.state.meta.errors.length ? "border-destructive" : ""
-            }
-          >
-            <SelectValue placeholder="Select an option" />
-          </SelectTrigger>
-          <SelectContent>
-            {schema.options?.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select
+        value={field.state.value ?? ""}
+        onValueChange={field.handleChange}
+      >
+        <SelectTrigger className={getSharpInputClasses(hasError)}>
+          <SelectValue placeholder="Select an option" />
+        </SelectTrigger>
+        <SelectContent className="rounded-none border-zinc-200 shadow-none">
+          {schema.options?.map((opt) => (
+            <SelectItem
+              key={opt.value}
+              value={opt.value}
+              className="rounded-none cursor-pointer focus:bg-zinc-100 focus:text-zinc-900"
+            >
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
@@ -183,40 +200,52 @@ export function MultiSelectField({
   const currentValues = Array.isArray(field.state.value)
     ? field.state.value
     : [];
+  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex flex-col mb-4">
+    <div className="group mb-6">
       <FieldInfo schema={schema} />
       <div
-        className={`flex flex-col gap-2 p-3 border rounded-md mt-1 ${
-          field.state.meta.errors.length
-            ? "border-destructive bg-destructive/5"
-            : "border-input"
+        className={`grid grid-cols-1 gap-2 p-4 border transition-colors sm:grid-cols-2 ${
+          hasError
+            ? "border-red-200 bg-red-50/10"
+            : "border-zinc-100 bg-zinc-50/30"
         }`}
       >
-        {schema.options?.map((opt) => (
-          <div key={opt.value} className="flex items-center space-x-2">
-            <Checkbox
-              id={`${schema.name}-${opt.value}`}
-              checked={currentValues.includes(opt.value)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  field.handleChange([...currentValues, opt.value]);
-                } else {
-                  field.handleChange(
-                    currentValues.filter((v) => v !== opt.value)
-                  );
-                }
-              }}
-            />
-            <label
-              htmlFor={`${schema.name}-${opt.value}`}
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+        {schema.options?.map((opt) => {
+          const isSelected = currentValues.includes(opt.value);
+          return (
+            <div
+              key={opt.value}
+              className={`flex flex-row items-start space-x-3 border p-3 transition-all hover:bg-white ${
+                isSelected
+                  ? "border-zinc-800 bg-white shadow-[2px_2px_0px_0px_rgba(24,24,27,1)]"
+                  : "border-transparent hover:border-zinc-200"
+              }`}
             >
-              {opt.label}
-            </label>
-          </div>
-        ))}
+              <Checkbox
+                id={`${schema.name}-${opt.value}`}
+                checked={isSelected}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    field.handleChange([...currentValues, opt.value]);
+                  } else {
+                    field.handleChange(
+                      currentValues.filter((v) => v !== opt.value)
+                    );
+                  }
+                }}
+                className="mt-0.5 rounded-none border-zinc-400 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900 data-[state=checked]:text-zinc-50"
+              />
+              <Label
+                htmlFor={`${schema.name}-${opt.value}`}
+                className="w-full cursor-pointer select-none text-sm font-medium text-zinc-700 leading-normal"
+              >
+                {opt.label}
+              </Label>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

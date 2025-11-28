@@ -54,85 +54,107 @@ export default function OnboardingForm() {
 
   if (isLoading)
     return (
-      <div className="p-12 text-center text-muted-foreground animate-pulse">
-        Loading form...
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="animate-pulse font-mono text-xs uppercase tracking-widest text-zinc-400">
+          Loading configuration...
+        </div>
       </div>
     );
   if (error || !schema)
     return (
-      <div className="p-12 text-center text-destructive">
-        Error loading form definition.
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="font-mono text-xs uppercase tracking-widest text-red-500">
+          Error loading form definition
+        </div>
       </div>
     );
 
   return (
-    <Card className="w-full max-w-2xl mx-auto my-10 border shadow-sm">
-      <CardHeader>
-        <CardTitle>{schema.title}</CardTitle>
-        <CardDescription>{schema.description}</CardDescription>
-      </CardHeader>
+    <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="mx-auto max-w-3xl border-zinc-200 bg-white shadow-none rounded-none">
+        <CardHeader className="border-b border-zinc-100 pb-8 pt-8">
+          <div className="space-y-2 text-center sm:text-left">
+            <CardTitle className="text-3xl font-light tracking-tight text-zinc-900 sm:text-4xl">
+              {schema.title}
+            </CardTitle>
+            <CardDescription className="text-base font-normal text-zinc-500">
+              {schema.description}
+            </CardDescription>
+          </div>
+        </CardHeader>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          form.handleSubmit();
-        }}
-      >
-        <CardContent className="space-y-2">
-          {schema.fields.map((fieldSchema) => (
-            <form.AppField
-              key={fieldSchema.name}
-              name={fieldSchema.name}
-              validators={{
-                onChange: ({ value }) => {
-                  if (!zodSchema) return undefined;
-                  const fieldValidator = zodSchema.shape[fieldSchema.name];
-                  const result = fieldValidator.safeParse(value);
-                  return result.success
-                    ? undefined
-                    : result.error.issues[0].message;
-                },
-              }}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            form.handleSubmit();
+          }}
+        >
+          <CardContent className="px-6 py-10 sm:px-10">
+            <div className="grid gap-6">
+              {schema.fields.map((fieldSchema) => (
+                <form.AppField
+                  key={fieldSchema.name}
+                  name={fieldSchema.name}
+                  validators={{
+                    onChange: ({ value }) => {
+                      if (!zodSchema) return undefined;
+                      const fieldValidator = zodSchema.shape[fieldSchema.name];
+                      const result = fieldValidator.safeParse(value);
+                      return result.success
+                        ? undefined
+                        : result.error.issues[0].message;
+                    },
+                  }}
+                >
+                  {(field) => {
+                    switch (fieldSchema.type) {
+                      case "textarea":
+                        return <field.TextAreaField schema={fieldSchema} />;
+                      case "number":
+                        return <field.NumberField schema={fieldSchema} />;
+                      case "select":
+                        return <field.SelectField schema={fieldSchema} />;
+                      case "switch":
+                        return <field.SwitchField schema={fieldSchema} />;
+                      case "multi-select":
+                        return <field.MultiSelectField schema={fieldSchema} />;
+                      default:
+                        return <field.TextField schema={fieldSchema} />;
+                    }
+                  }}
+                </form.AppField>
+              ))}
+            </div>
+          </CardContent>
+
+          <CardFooter className="flex flex-col items-center gap-4 border-t border-zinc-100 bg-zinc-50/50 px-6 py-8 sm:flex-row sm:justify-between sm:px-10">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => form.reset()}
+              disabled={mutation.isPending}
+              className="w-full rounded-none text-zinc-500 hover:bg-transparent hover:text-zinc-900 sm:w-auto"
             >
-              {(field) => {
-                switch (fieldSchema.type) {
-                  case "textarea":
-                    return <field.TextAreaField schema={fieldSchema} />;
-                  case "number":
-                    return <field.NumberField schema={fieldSchema} />;
-                  case "select":
-                    return <field.SelectField schema={fieldSchema} />;
-                  case "switch":
-                    return <field.SwitchField schema={fieldSchema} />;
-                  case "multi-select":
-                    return <field.MultiSelectField schema={fieldSchema} />;
-                  default:
-                    return <field.TextField schema={fieldSchema} />;
-                }
-              }}
-            </form.AppField>
-          ))}
-        </CardContent>
-
-        <CardFooter className="flex justify-between border-t p-6 bg-gray-50/50">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => form.reset()}
-            disabled={mutation.isPending}
-          >
-            Reset
-          </Button>
-          <Button
-            type="submit"
-            disabled={mutation.isPending}
-            className="min-w-[120px]"
-          >
-            {mutation.isPending ? "Submitting..." : "Submit"}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+              RESET FORM
+            </Button>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="w-full rounded-none bg-zinc-900 px-8 py-6 text-sm font-medium uppercase tracking-wider text-white shadow-none transition-all hover:bg-zinc-800 disabled:opacity-50 sm:w-auto"
+            >
+              {mutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                  PROCESSING...
+                </span>
+              ) : (
+                "SUBMIT APPLICATION"
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    </div>
   );
 }
