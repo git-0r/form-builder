@@ -16,6 +16,7 @@ import { useFormSchema } from "../../hooks/useFormSchema";
 import { createZodSchema } from "../../lib/zod-generator";
 import { useAppForm } from "../../hooks/useAppForm";
 import type { AxiosError } from "axios";
+import { toast } from "sonner";
 
 export default function OnboardingForm() {
   const { data: schema, isLoading, error } = useFormSchema();
@@ -28,7 +29,11 @@ export default function OnboardingForm() {
   const mutation = useMutation({
     mutationFn: (data: unknown) => api.post("/submissions", data),
     onSuccess: () => {
-      alert("Application Submitted Successfully!");
+      toast.success("Application Submitted", {
+        description:
+          "Your employee onboarding form has been successfully recorded.",
+        duration: 5000,
+      });
       form.reset();
       queryClient.invalidateQueries({ queryKey: ["submissions"] });
     },
@@ -42,6 +47,11 @@ export default function OnboardingForm() {
         ? Object.values(backendErrors).join("\n")
         : "Submission failed. Please check your inputs.";
       alert(msg);
+
+      toast.error("Submission Failed", {
+        description: msg,
+        duration: 6000,
+      });
     },
   });
 

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Form from "./components/onboarding-form";
 import { SubmissionsTable } from "./components/submissions/SubmissionsTable";
 import { Navbar } from "./components/layout/Navbar";
+import { Toaster } from "./components/ui/sonner";
 
 function App() {
   const [currentView, setCurrentView] = useState<"form" | "table">("form");
@@ -32,6 +33,7 @@ function App() {
           )}
         </div>
       </main>
+      <Toaster position="top-center" richColors />
     </div>
   );
 }
