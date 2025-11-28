@@ -71,13 +71,13 @@ export default function OnboardingForm() {
 
   return (
     <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="mx-auto max-w-3xl border-zinc-200 bg-white shadow-none rounded-none">
+      <Card className="mx-auto max-w-3xl border-zinc-200 bg-white rounded-sm py-0">
         <CardHeader className="border-b border-zinc-100 pb-8 pt-8">
           <div className="space-y-2 text-center sm:text-left">
-            <CardTitle className="text-3xl font-light tracking-tight text-zinc-900 sm:text-4xl">
+            <CardTitle className="text-3xl font-bold text-center tracking-tight text-zinc-900 sm:text-4xl">
               {schema.title}
             </CardTitle>
-            <CardDescription className="text-base font-normal text-zinc-500">
+            <CardDescription className="text-base text-center font-normal text-zinc-500">
               {schema.description}
             </CardDescription>
           </div>
@@ -90,8 +90,8 @@ export default function OnboardingForm() {
             form.handleSubmit();
           }}
         >
-          <CardContent className="px-6 py-10 sm:px-10">
-            <div className="grid gap-6">
+          <CardContent className="px-6 py-4 sm:px-10">
+            <div className="grid gap-4">
               {schema.fields.map((fieldSchema) => (
                 <form.AppField
                   key={fieldSchema.name}
@@ -134,14 +134,14 @@ export default function OnboardingForm() {
               variant="ghost"
               onClick={() => form.reset()}
               disabled={mutation.isPending}
-              className="w-full rounded-none text-zinc-500 hover:bg-transparent hover:text-zinc-900 sm:w-auto"
+              className="w-full rounded-none text-zinc-500 hover:bg-transparent hover:text-zinc-900 sm:w-auto cursor-pointer"
             >
               RESET FORM
             </Button>
             <Button
               type="submit"
               disabled={mutation.isPending}
-              className="w-full rounded-none bg-zinc-900 px-8 py-6 text-sm font-medium uppercase tracking-wider text-white shadow-none transition-all hover:bg-zinc-800 disabled:opacity-50 sm:w-auto"
+              className="w-full rounded-sm bg-violet-900 px-8 py-6 text-sm font-medium uppercase tracking-wider text-white shadow-none transition-all hover:bg-violet-800 disabled:opacity-50 sm:w-auto cursor-pointer"
             >
               {mutation.isPending ? (
                 <span className="flex items-center gap-2">

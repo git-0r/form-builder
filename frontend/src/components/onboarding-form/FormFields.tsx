@@ -20,36 +20,40 @@ import type {
   TextFieldSchema,
 } from "../../types/schema";
 
-const getSharpInputClasses = (hasError: boolean) =>
-  `rounded-none border-zinc-200 bg-transparent px-3 py-2 text-sm shadow-none transition-colors 
-   placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 
-   disabled:cursor-not-allowed disabled:opacity-50
-   ${
-     hasError
-       ? "border-red-500 focus-visible:ring-red-500"
-       : "hover:border-zinc-300"
-   }`;
+const INPUT_BASE =
+  "h-14 bg-white border-slate-200 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all rounded-sm text-base md:text-lg hover:border-slate-300";
+const INPUT_ERROR =
+  "border-red-300 bg-red-50 focus:ring-red-200 focus:border-red-400";
 
-const FieldInfo = ({ schema }: { schema: FormFieldSchema }) => {
+const FieldWrapper = ({
+  schema,
+  children,
+}: {
+  schema: FormFieldSchema;
+  children: React.ReactNode;
+}) => {
   const field = useFieldContext();
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="flex items-baseline justify-between mb-2">
-      <Label
-        htmlFor={schema.name}
-        className={`text-xs font-medium uppercase tracking-wider text-zinc-500 ${
-          hasError ? "text-red-500" : ""
-        }`}
-      >
-        {schema.label}
-        {schema.required && <span className="text-red-500 ml-0.5">*</span>}
-      </Label>
-      {hasError && (
-        <span className="text-[10px] font-medium text-red-500 uppercase tracking-wide">
-          {field.state.meta.errors.join(", ")}
-        </span>
-      )}
+    <div className="group space-y-2 mb-6 h-">
+      <div className="flex justify-between items-center">
+        <Label
+          htmlFor={schema.name}
+          className={`text-sm md:text-base font-medium tracking-tight ${
+            hasError ? "text-red-600" : "text-slate-700"
+          }`}
+        >
+          {schema.label}
+          {schema.required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+        {hasError && (
+          <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-0.5 rounded-full animate-in fade-in">
+            {field.state.meta.errors[0]}
+          </span>
+        )}
+      </div>
+      {children}
     </div>
   );
 };
@@ -63,8 +67,7 @@ export function TextField({
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="group mb-6">
-      <FieldInfo schema={schema} />
+    <FieldWrapper schema={schema}>
       <Input
         type={
           schema.type === "textarea" || schema.type === "select"
@@ -76,9 +79,9 @@ export function TextField({
         value={field.state.value ?? ""}
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
-        className={getSharpInputClasses(hasError)}
+        className={`${INPUT_BASE} ${hasError ? INPUT_ERROR : ""}`}
       />
-    </div>
+    </FieldWrapper>
   );
 }
 
@@ -87,19 +90,18 @@ export function TextAreaField({ schema }: { schema: TextFieldSchema }) {
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="group mb-6">
-      <FieldInfo schema={schema} />
+    <FieldWrapper schema={schema}>
       <Textarea
         id={schema.name}
         placeholder={schema.placeholder}
         value={field.state.value ?? ""}
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
-        className={`${getSharpInputClasses(
-          hasError
-        )} min-h-[120px] resize-none`}
+        className={`min-h-[120px] resize-y bg-white border-slate-200 focus:ring-2 focus:ring-violet-500 rounded-sm text-base md:text-lg ${
+          hasError ? INPUT_ERROR : ""
+        }`}
       />
-    </div>
+    </FieldWrapper>
   );
 }
 
@@ -108,8 +110,7 @@ export function NumberField({ schema }: { schema: NumberFieldSchema }) {
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="group mb-6">
-      <FieldInfo schema={schema} />
+    <FieldWrapper schema={schema}>
       <Input
         type="number"
         id={schema.name}
@@ -124,9 +125,9 @@ export function NumberField({ schema }: { schema: NumberFieldSchema }) {
           const val = e.target.value;
           field.handleChange(val === "" ? undefined : Number(val));
         }}
-        className={getSharpInputClasses(hasError)}
+        className={`${INPUT_BASE} ${hasError ? INPUT_ERROR : ""}`}
       />
-    </div>
+    </FieldWrapper>
   );
 }
 
@@ -135,19 +136,23 @@ export function SwitchField({ schema }: { schema: SwitchFieldSchema }) {
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="group mb-6 flex items-center justify-between border-b border-zinc-100 pb-4">
+    <div
+      className={`flex items-center justify-between p-4 border rounded-sm bg-white mb-6 transition-all ${
+        hasError
+          ? "border-red-200 bg-red-50/30"
+          : "border-slate-200 hover:border-violet-200"
+      }`}
+    >
       <div className="space-y-1">
         <Label
           htmlFor={schema.name}
-          className={`text-sm font-medium text-zinc-900 ${
-            hasError ? "text-red-500" : ""
-          }`}
+          className="text-base font-medium text-slate-800 cursor-pointer"
         >
           {schema.label}
         </Label>
         {hasError && (
-          <p className="text-[10px] font-medium text-red-500 uppercase tracking-wide">
-            {field.state.meta.errors.join(", ")}
+          <p className="text-xs text-red-500 font-medium">
+            {field.state.meta.errors[0]}
           </p>
         )}
       </div>
@@ -155,7 +160,7 @@ export function SwitchField({ schema }: { schema: SwitchFieldSchema }) {
         id={schema.name}
         checked={!!field.state.value}
         onCheckedChange={field.handleChange}
-        className="data-[state=checked]:bg-zinc-900"
+        className="data-[state=checked]:bg-violet-600"
       />
     </div>
   );
@@ -166,28 +171,29 @@ export function SelectField({ schema }: { schema: TextFieldSchema }) {
   const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="group mb-6">
-      <FieldInfo schema={schema} />
+    <FieldWrapper schema={schema}>
       <Select
         value={field.state.value ?? ""}
         onValueChange={field.handleChange}
       >
-        <SelectTrigger className={getSharpInputClasses(hasError)}>
+        <SelectTrigger
+          className={`${INPUT_BASE} ${hasError ? INPUT_ERROR : ""} py-6`}
+        >
           <SelectValue placeholder="Select an option" />
         </SelectTrigger>
-        <SelectContent className="rounded-none border-zinc-200 shadow-none">
+        <SelectContent className="rounded-sm border-slate-100">
           {schema.options?.map((opt) => (
             <SelectItem
               key={opt.value}
               value={opt.value}
-              className="rounded-none cursor-pointer focus:bg-zinc-100 focus:text-zinc-900"
+              className="focus:bg-violet-50 focus:text-violet-700 py-3 cursor-pointer text-lg"
             >
               {opt.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-    </div>
+    </FieldWrapper>
   );
 }
 
@@ -200,28 +206,23 @@ export function MultiSelectField({
   const currentValues = Array.isArray(field.state.value)
     ? field.state.value
     : [];
-  const hasError = field.state.meta.errors.length > 0;
 
   return (
-    <div className="group mb-6">
-      <FieldInfo schema={schema} />
-      <div
-        className={`grid grid-cols-1 gap-2 p-4 border transition-colors sm:grid-cols-2 ${
-          hasError
-            ? "border-red-200 bg-red-50/10"
-            : "border-zinc-100 bg-zinc-50/30"
-        }`}
-      >
+    <FieldWrapper schema={schema}>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 p-1`}>
         {schema.options?.map((opt) => {
           const isSelected = currentValues.includes(opt.value);
           return (
             <div
               key={opt.value}
-              className={`flex flex-row items-start space-x-3 border p-3 transition-all hover:bg-white ${
-                isSelected
-                  ? "border-zinc-800 bg-white shadow-[2px_2px_0px_0px_rgba(24,24,27,1)]"
-                  : "border-transparent hover:border-zinc-200"
-              }`}
+              className={`
+                relative flex items-center space-x-3 rounded-sm border p-4 transition-all
+                ${
+                  isSelected
+                    ? "border-violet-600 bg-violet-50 ring-1 ring-violet-600"
+                    : "border-slate-200 bg-white hover:border-violet-300"
+                }
+              `}
             >
               <Checkbox
                 id={`${schema.name}-${opt.value}`}
@@ -235,18 +236,29 @@ export function MultiSelectField({
                     );
                   }
                 }}
-                className="mt-0.5 rounded-none border-zinc-400 data-[state=checked]:bg-zinc-900 data-[state=checked]:border-zinc-900 data-[state=checked]:text-zinc-50"
+                className={`
+                  mt-0.5 rounded
+                  ${
+                    isSelected
+                      ? "data-[state=checked]:bg-violet-600 border-violet-600"
+                      : "border-slate-300"
+                  }
+                `}
               />
-              <Label
-                htmlFor={`${schema.name}-${opt.value}`}
-                className="w-full cursor-pointer select-none text-sm font-medium text-zinc-700 leading-normal"
-              >
-                {opt.label}
-              </Label>
+              <div className="flex-1">
+                <Label
+                  htmlFor={`${schema.name}-${opt.value}`}
+                  className={`text-sm md:text-lg font-medium leading-relaxed cursor-pointer ${
+                    isSelected ? "text-violet-900" : "text-slate-700"
+                  }`}
+                >
+                  {opt.label}
+                </Label>
+              </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </FieldWrapper>
   );
 }
