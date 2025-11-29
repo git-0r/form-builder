@@ -57,7 +57,7 @@
         { "value": "sql", "label": "SQL" },
         { "value": "python", "label": "Python" }
       ],
-      "required": false,
+      "required": true,
       "validation": {
         "minSelected": 1,
         "maxSelected": 5
