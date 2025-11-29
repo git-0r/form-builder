@@ -3,7 +3,7 @@ import app from "./src/app";
 import { connectDB, closeDB } from "./src/config/db";
 import { runMigrations } from "./src/database/migrate";
 
-const PORT = process.env.port || 3000;
+const PORT = process.env.PORT || 3000;
 const DB_PATH = path.join(process.cwd(), "database.sqlite");
 
 try {
