@@ -1,4 +1,4 @@
-import { db } from "../config/db";
+import { getDB } from "../config/db";
 
 export interface SubmissionRecord {
   id: string;
@@ -6,39 +6,35 @@ export interface SubmissionRecord {
   createdAt: string;
 }
 
-// Prepared Statements
-const insertStmt = db.prepare(
-  "INSERT INTO submissions (id, data, createdAt) VALUES (?, ?, ?)"
-);
-const deleteStmt = db.prepare("DELETE FROM submissions WHERE id = ?");
-const updateStmt = db.prepare("UPDATE submissions SET data = ? WHERE id = ?");
-const countStmt = db.prepare("SELECT COUNT(*) as total FROM submissions");
-const getByIdStmt = db.prepare(
-  "SELECT id, data, createdAt FROM submissions WHERE id = ?"
-);
-
 export const SubmissionModel = {
   create: (id: string, data: object, createdAt: string) => {
-    insertStmt.run(id, JSON.stringify(data), createdAt);
+    const stmt = getDB().prepare(
+      "INSERT INTO submissions (id, data, createdAt) VALUES (?, ?, ?)"
+    );
+    stmt.run(id, JSON.stringify(data), createdAt);
   },
 
   update: (id: string, data: object) => {
-    const result = updateStmt.run(JSON.stringify(data), id);
+    const stmt = getDB().prepare(
+      "UPDATE submissions SET data = ? WHERE id = ?"
+    );
+    const result = stmt.run(JSON.stringify(data), id);
     return result.changes > 0;
   },
 
   delete: (id: string) => {
-    const result = deleteStmt.run(id);
+    const stmt = getDB().prepare("DELETE FROM submissions WHERE id = ?");
+    const result = stmt.run(id);
     return result.changes > 0;
   },
 
   findById: (id: string): SubmissionRecord | undefined => {
-    const row = getByIdStmt.get(id) as any;
+    const stmt = getDB().prepare(
+      "SELECT id, data, createdAt FROM submissions WHERE id = ?"
+    );
+    const row = stmt.get(id) as any;
     if (!row) return undefined;
-    return {
-      ...row,
-      data: JSON.parse(row.data),
-    };
+    return { ...row, data: JSON.parse(row.data) };
   },
 
   findAll: (
@@ -50,7 +46,6 @@ export const SubmissionModel = {
     let queryStr = `SELECT id, data, createdAt FROM submissions`;
     const params: any[] = [];
 
-    // SQLite's INSTR or LIKE can be used. LIKE is case-insensitive by default in SQLite.
     if (search) {
       queryStr += ` WHERE data LIKE ?`;
       params.push(`%${search}%`);
@@ -59,8 +54,8 @@ export const SubmissionModel = {
     queryStr += ` ORDER BY createdAt ${sortOrder} LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
-    const query = db.prepare(queryStr);
-    const rows = query.all(...params) as any[];
+    const stmt = getDB().prepare(queryStr);
+    const rows = stmt.all(...params) as any[];
 
     return rows.map((row) => ({
       ...row,
@@ -70,13 +65,14 @@ export const SubmissionModel = {
 
   count: (search?: string) => {
     if (search) {
-      const stmt = db.prepare(
+      const stmt = getDB().prepare(
         "SELECT COUNT(*) as total FROM submissions WHERE data LIKE ?"
       );
       const result = stmt.get(`%${search}%`) as { total: number };
       return result.total;
     }
-    const result = countStmt.get() as { total: number };
+    const stmt = getDB().prepare("SELECT COUNT(*) as total FROM submissions");
+    const result = stmt.get() as { total: number };
     return result.total;
   },
 };

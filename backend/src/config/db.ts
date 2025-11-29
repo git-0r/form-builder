@@ -1,24 +1,31 @@
 import { DatabaseSync } from "node:sqlite";
-import path from "node:path";
 
-const dbPath = path.join(process.cwd(), "database.sqlite");
-const db = new DatabaseSync(dbPath);
+let dbInstance: DatabaseSync | null = null;
 
-export const initDB = () => {
-  try {
-    console.log("Initializing database...");
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS submissions (
-        id TEXT PRIMARY KEY,
-        data TEXT NOT NULL,
-        createdAt TEXT NOT NULL
-      )
-    `);
-    console.log(`SQLite connected and ready at: ${dbPath}`);
-  } catch (error) {
-    console.error("Failed to initialize database:", error);
-    process.exit(1);
+export const connectDB = (location: string): void => {
+  if (dbInstance) {
+    dbInstance.close();
   }
+
+  dbInstance = new DatabaseSync(location);
+
+  dbInstance.exec("PRAGMA journal_mode = WAL;");
+
+  console.log(`Database connected at: ${location}`);
 };
 
-export { db };
+export const getDB = (): DatabaseSync => {
+  if (!dbInstance) {
+    throw new Error(
+      "Database not initialized. Ensure connectDB() is called before using models."
+    );
+  }
+  return dbInstance;
+};
+
+export const closeDB = (): void => {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+};

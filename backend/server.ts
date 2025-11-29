@@ -1,29 +1,31 @@
-import express from "express";
-import cors from "cors";
-import apiRoutes from "./src/routes/api";
-import { initDB } from "./src/config/db";
+import path from "path";
+import app from "./src/app";
+import { connectDB, closeDB } from "./src/config/db";
+import { runMigrations } from "./src/database/migrate";
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.port || 3000;
+const DB_PATH = path.join(process.cwd(), "database.sqlite");
 
-// middleware
-app.use(cors());
-app.use(express.json());
+try {
+  connectDB(DB_PATH);
+  runMigrations();
+} catch (error) {
+  console.error("Failed to start application:", error);
+  process.exit(1);
+}
 
-app.use("/api", apiRoutes);
+const server = app.listen(PORT, () => {
+  console.log(`Backend running on http://localhost:${PORT}`);
+});
 
-const startServer = async () => {
-  try {
-    // this function is sync
-    initDB();
-
-    app.listen(PORT, () => {
-      console.log(`Backend running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
+const shutdown = () => {
+  console.log("SIGTERM signal received: closing HTTP server");
+  server.close(() => {
+    console.log("HTTP server closed");
+    closeDB();
+    process.exit(0);
+  });
 };
 
-startServer();
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
