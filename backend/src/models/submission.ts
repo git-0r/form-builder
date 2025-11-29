@@ -10,6 +10,8 @@ export interface SubmissionRecord {
 const insertStmt = db.prepare(
   "INSERT INTO submissions (id, data, createdAt) VALUES (?, ?, ?)"
 );
+const deleteStmt = db.prepare("DELETE FROM submissions WHERE id = ?");
+const updateStmt = db.prepare("UPDATE submissions SET data = ? WHERE id = ?");
 const countStmt = db.prepare("SELECT COUNT(*) as total FROM submissions");
 
 export const SubmissionModel = {
@@ -17,24 +19,51 @@ export const SubmissionModel = {
     insertStmt.run(id, JSON.stringify(data), createdAt);
   },
 
-  findAll: (limit: number, offset: number, sortOrder: "ASC" | "DESC") => {
-    const query = db.prepare(`
-      SELECT id, data, createdAt 
-      FROM submissions 
-      ORDER BY createdAt ${sortOrder} 
-      LIMIT ? OFFSET ?
-    `);
+  update: (id: string, data: object) => {
+    const result = updateStmt.run(JSON.stringify(data), id);
+    return result.changes > 0;
+  },
 
-    const rows = query.all(limit, offset) as any[];
+  delete: (id: string) => {
+    const result = deleteStmt.run(id);
+    return result.changes > 0;
+  },
 
-    // Parse JSON data before returning
+  findAll: (
+    limit: number,
+    offset: number,
+    sortOrder: "ASC" | "DESC",
+    search?: string
+  ) => {
+    let queryStr = `SELECT id, data, createdAt FROM submissions`;
+    const params: any[] = [];
+
+    // SQLite's INSTR or LIKE can be used. LIKE is case-insensitive by default in SQLite.
+    if (search) {
+      queryStr += ` WHERE data LIKE ?`;
+      params.push(`%${search}%`);
+    }
+
+    queryStr += ` ORDER BY createdAt ${sortOrder} LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const query = db.prepare(queryStr);
+    const rows = query.all(...params) as any[];
+
     return rows.map((row) => ({
       ...row,
       data: JSON.parse(row.data),
     })) as SubmissionRecord[];
   },
 
-  count: () => {
+  count: (search?: string) => {
+    if (search) {
+      const stmt = db.prepare(
+        "SELECT COUNT(*) as total FROM submissions WHERE data LIKE ?"
+      );
+      const result = stmt.get(`%${search}%`) as { total: number };
+      return result.total;
+    }
     const result = countStmt.get() as { total: number };
     return result.total;
   },

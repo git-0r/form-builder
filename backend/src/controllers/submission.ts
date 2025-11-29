@@ -19,14 +19,21 @@ export const getSubmissions = (req: Request, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
-    const offset = (page - 1) * limit;
+    const search = (req.query.q as string) || undefined;
     const sortOrder =
       (req.query.sortOrder as string)?.toUpperCase() === "DESC"
         ? "DESC"
         : "ASC";
 
-    const submissions = SubmissionModel.findAll(limit, offset, sortOrder);
-    const total = SubmissionModel.count();
+    const offset = (page - 1) * limit;
+
+    const submissions = SubmissionModel.findAll(
+      limit,
+      offset,
+      sortOrder,
+      search
+    );
+    const total = SubmissionModel.count(search);
 
     res.json({
       success: true,
@@ -43,5 +50,30 @@ export const getSubmissions = (req: Request, res: Response) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch submissions" });
+  }
+};
+
+export const deleteSubmission = (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const success = SubmissionModel.delete(id);
+    if (!success)
+      return res.status(404).json({ success: false, message: "Not found" });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Delete failed" });
+  }
+};
+
+export const updateSubmission = (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // req.body is already validated by middleware
+    const success = SubmissionModel.update(id, req.body);
+    if (!success)
+      return res.status(404).json({ success: false, message: "Not found" });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Update failed" });
   }
 };
