@@ -1,41 +1,121 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
-  flexRender,
   createColumnHelper,
   type SortingState,
+  type OnChangeFn,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Loader2, Eye, ArrowUpDown, Calendar } from "lucide-react";
+import { Eye, ArrowUpDown, Calendar, Trash2 } from "lucide-react";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useSearch, useNavigate } from "@tanstack/react-router";
 import { useSubmissions, type Submission } from "../../hooks/useSubmissions";
+import { api } from "../../lib/api";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../ui/alert-dialog";
 import { Pagination } from "./Pagination";
+import Toolbar from "./Toolbar";
+import { exportSubmissionsToCSV } from "../../lib/export";
+import DataTable from "./DataTable";
 import ViewSheet from "./ViewSheet";
 
 const columnHelper = createColumnHelper<Submission>();
 
 export function SubmissionsTable() {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const queryClient = useQueryClient();
+
+  const navigate = useNavigate({ from: "/submissions" });
+  const {
+    page,
+    limit,
+    sortOrder,
+    q: search,
+  } = useSearch({
+    from: "/submissions",
+  });
+
+  const sorting: SortingState = [
+    { id: "createdAt", desc: sortOrder === "DESC" },
+  ];
+
+  const [searchTerm, setSearchTerm] = useState(search);
   const [selectedSubmission, setSelectedSubmission] =
     useState<Submission | null>(null);
 
-  const sortOrder = sorting.length > 0 && sorting[0].desc ? "DESC" : "ASC";
+  const [submissionToDelete, setSubmissionToDelete] = useState<string | null>(
+    null
+  );
+
+  useEffect(() => {
+    setSearchTerm(search);
+  }, [search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm !== search) {
+        navigate({
+          search: (prev) => ({ ...prev, q: searchTerm, page: 1 }),
+          replace: true,
+        });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, search, navigate]);
 
   const { data: response, isLoading } = useSubmissions({
     page,
     limit,
     sortOrder,
+    q: search,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/submissions/${id}`),
+    onSuccess: () => {
+      toast.success("Entry Deleted", {
+        description: "The submission has been permanently removed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["submissions"] });
+      setSubmissionToDelete(null);
+    },
+    onError: () => {
+      toast.error("Delete Failed", {
+        description: "Could not delete the submission.",
+      });
+      setSubmissionToDelete(null);
+    },
+  });
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updaterOrValue) => {
+    const newSorting =
+      typeof updaterOrValue === "function"
+        ? updaterOrValue(sorting)
+        : updaterOrValue;
+
+    const newOrder = newSorting[0]?.desc ? "DESC" : "ASC";
+
+    navigate({
+      search: (prev) => ({ ...prev, sortOrder: newOrder }),
+    });
+  };
 
   const columns = [
     columnHelper.accessor("id", {
-      header: "Submission ID",
+      header: "ID",
       cell: (info) => (
         <span className="font-mono text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded">
           {info.getValue().slice(0, 8)}
@@ -69,14 +149,24 @@ export function SubmissionsTable() {
       id: "actions",
       header: "Actions",
       cell: (props) => (
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <Button
             size="sm"
+            variant="ghost"
             onClick={() => setSelectedSubmission(props.row.original)}
-            className="bg-violet-100 text-violet-700 hover:bg-violet-200 hover:text-violet-800 border-none shadow-none font-semibold"
+            className="h-8 w-8 p-0 text-slate-500 hover:text-violet-600 hover:bg-violet-50"
+            title="View Details"
           >
-            <Eye className="mr-2 h-4 w-4" />
-            View
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSubmissionToDelete(props.row.original.id)}
+            className="h-8 w-8 p-0 text-slate-500 hover:text-red-600 hover:bg-red-50"
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       ),
@@ -90,99 +180,79 @@ export function SubmissionsTable() {
     manualPagination: true,
     manualSorting: true,
     state: { sorting },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     pageCount: response?.meta.totalPages ?? -1,
   });
 
   return (
     <>
-      <Card className="overflow-hidden border-slate-200 shadow-slate-200/40 rounded-xl bg-white py-0">
-        <div className="p-0">
-          {isLoading ? (
-            <div className="flex h-64 items-center justify-center bg-slate-50/50">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
-                <p className="text-sm text-slate-500 font-medium">
-                  Loading records...
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="relative w-full overflow-auto">
-              <table className="w-full text-sm text-left caption-bottom">
-                <thead className="bg-slate-50/80 [&_tr]:border-b">
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <tr
-                      key={headerGroup.id}
-                      className="border-b border-slate-200 transition-colors"
-                    >
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          className="h-12 px-6 text-left align-middle font-semibold text-slate-500"
-                        >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </th>
-                      ))}
-                    </tr>
-                  ))}
-                </thead>
-                <tbody className="[&_tr:last-child]:border-0">
-                  {table.getRowModel().rows.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={columns.length}
-                        className="h-32 text-center align-middle text-slate-500 bg-slate-50/30"
-                      >
-                        No submissions found.
-                      </td>
-                    </tr>
-                  ) : (
-                    table.getRowModel().rows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-b border-slate-100 transition-colors hover:bg-slate-50/80 data-[state=selected]:bg-slate-100"
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="p-6 align-middle">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        <Pagination
-          page={page}
-          totalPages={response?.meta.totalPages || 1}
-          limit={limit}
-          isLoading={isLoading}
-          onPageChange={setPage}
-          onLimitChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
+      <div className="space-y-4">
+        <Toolbar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          totalCount={response?.meta.total || 0}
+          onExport={() => exportSubmissionsToCSV(response?.data || [])}
         />
-      </Card>
+
+        <Card className="overflow-hidden border-slate-200 rounded-xl shadow-none bg-white py-0">
+          <DataTable
+            table={table}
+            isLoading={isLoading}
+            columnsLength={columns.length}
+            emptyMessage={
+              searchTerm
+                ? "No matches found for your search."
+                : "No submissions found."
+            }
+          />
+
+          <Pagination
+            page={page}
+            totalPages={response?.meta.totalPages || 1}
+            limit={limit}
+            isLoading={isLoading}
+            onPageChange={(p) =>
+              navigate({ search: (prev) => ({ ...prev, page: p }) })
+            }
+            onLimitChange={(l) =>
+              navigate({ search: (prev) => ({ ...prev, limit: l, page: 1 }) })
+            }
+          />
+        </Card>
+      </div>
 
       <ViewSheet
         isOpen={!!selectedSubmission}
         onClose={() => setSelectedSubmission(null)}
         submission={selectedSubmission}
       />
+
+      <AlertDialog
+        open={!!submissionToDelete}
+        onOpenChange={(open) => !open && setSubmissionToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              submission from the database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() =>
+                submissionToDelete && deleteMutation.mutate(submissionToDelete)
+              }
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

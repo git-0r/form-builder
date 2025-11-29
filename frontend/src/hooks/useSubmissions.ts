@@ -22,6 +22,7 @@ interface UseSubmissionsParams {
   page: number;
   limit: number;
   sortOrder: "ASC" | "DESC";
+  q?: string;
 }
 
 export const useSubmissions = (params: UseSubmissionsParams) => {
