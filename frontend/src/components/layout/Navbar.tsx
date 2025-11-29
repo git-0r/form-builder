@@ -12,14 +12,12 @@ export function Navbar() {
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-8">
         <Link to="/">
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-linear-to-br from-violet-600 to-indigo-600 text-white font-bold shadow-sm shrink-0">
-            M
+          <div className="flex items-center gap-2">
+            <img src="/aperture.svg" className="size-9 shrink-0" />
+            <span className="hidden sm:inline-block text-lg font-bold tracking-tight text-slate-900">
+              Form<span className="text-violet-600">Builder</span>
+            </span>
           </div>
-          <span className="hidden sm:inline-block text-lg font-bold tracking-tight text-slate-900">
-            MatBook<span className="text-violet-600">Assignment</span>
-          </span>
-        </div>
         </Link>
 
         <nav className="flex gap-1 sm:gap-2 bg-slate-100/50 p-1 rounded-lg border border-slate-200/50">
