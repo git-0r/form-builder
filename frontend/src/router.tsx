@@ -7,7 +7,7 @@ import {
 import { Navbar } from "./components/layout/Navbar";
 import { SubmissionsTable } from "./components/submissions/SubmissionsTable";
 import OnboardingForm from "./components/onboarding-form";
-import { submissionSearchSchema } from "./lib/submissionSearchSchema";
+import { submissionSearchSchema } from "./lib/zod-schemas";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -26,6 +26,12 @@ const indexRoute = createRoute({
   component: OnboardingForm,
 });
 
+const editRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/edit/$submissionId",
+  component: OnboardingForm,
+});
+
 const submissionsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/submissions",
@@ -34,7 +40,11 @@ const submissionsRoute = createRoute({
   validateSearch: (search) => submissionSearchSchema.parse(search),
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, submissionsRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  editRoute,
+  submissionsRoute,
+]);
 
 export const router = createRouter({
   routeTree,

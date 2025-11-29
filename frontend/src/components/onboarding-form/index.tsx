@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { api } from "../../lib/api";
 import { Button } from "../ui/button";
 import {
@@ -13,63 +14,89 @@ import {
   CardTitle,
 } from "../ui/card";
 import { useFormSchema } from "../../hooks/useFormSchema";
+import { useSubmission } from "../../hooks/useSubmissions";
 import { createZodSchema } from "../../lib/zod-generator";
 import { useAppForm } from "../../hooks/useAppForm";
 import type { AxiosError } from "axios";
 import { toast } from "sonner";
 
 export default function OnboardingForm() {
-  const { data: schema, isLoading, error } = useFormSchema();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const params = useParams({ strict: false });
+  const editId = params.submissionId;
+
+  const { data: schema, isLoading: isSchemaLoading, error } = useFormSchema();
+  const { data: existingSubmission, isLoading: isSubmissionLoading } =
+    useSubmission(editId);
+
+  const isLoading = isSchemaLoading || (!!editId && isSubmissionLoading);
 
   const zodSchema = useMemo(() => {
     return schema?.fields ? createZodSchema(schema.fields) : null;
   }, [schema]);
 
   const mutation = useMutation({
-    mutationFn: (data: unknown) => api.post("/submissions", data),
+    mutationFn: (data: unknown) => {
+      if (editId) {
+        return api.put(`/submissions/${editId}`, data);
+      }
+      return api.post("/submissions", data);
+    },
     onSuccess: () => {
-      toast.success("Application Submitted", {
-        description:
-          "Your employee onboarding form has been successfully recorded.",
-        duration: 5000,
+      toast.success(editId ? "Entry Updated" : "Application Submitted", {
+        description: editId
+          ? "The submission has been updated."
+          : "Successfully recorded.",
       });
-      form.reset();
+
       queryClient.invalidateQueries({ queryKey: ["submissions"] });
+
+      navigate({
+        to: "/submissions",
+        search: {
+          page: 1,
+          limit: 10,
+          sortOrder: "DESC",
+          q: "",
+        },
+      });
     },
     onError: (error) => {
       const axiosError = error as AxiosError<{
         errors: Record<string, string>;
       }>;
       const backendErrors = axiosError.response?.data?.errors;
-
       const msg = backendErrors
         ? Object.values(backendErrors).join("\n")
         : "Submission failed. Please check your inputs.";
-      alert(msg);
-
-      toast.error("Submission Failed", {
-        description: msg,
-        duration: 6000,
-      });
+      toast.error("Submission Failed", { description: msg });
     },
   });
 
   const form = useAppForm({
-    defaultValues: {},
+    defaultValues: existingSubmission?.data || {},
     onSubmit: async ({ value }) => {
       await mutation.mutateAsync(value);
     },
   });
 
+  useEffect(() => {
+    if (existingSubmission?.data) {      
+      form.reset(existingSubmission.data);
+    }
+  }, [existingSubmission, form]);
+
   if (isLoading)
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="animate-pulse font-mono text-xs uppercase tracking-widest text-zinc-400">
-          Loading configuration...
+          {editId ? "Loading Submission..." : "Loading Configuration..."}
         </div>
       </div>
     );
+
   if (error || !schema)
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -80,15 +107,17 @@ export default function OnboardingForm() {
     );
 
   return (
-    <div className="min-h-screen px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="mx-auto max-w-3xl border-zinc-200 bg-white rounded-sm py-0">
+    <div className="min-h-screen bg-zinc-50/30 px-4 py-12 sm:px-6 lg:px-8">
+      <Card className="mx-auto max-w-3xl border-zinc-200 bg-white shadow-none rounded-sm py-0">
         <CardHeader className="border-b border-zinc-100 pb-8 pt-8">
           <div className="space-y-2 text-center sm:text-left">
-            <CardTitle className="text-3xl font-bold text-center tracking-tight text-zinc-900 sm:text-4xl">
-              {schema.title}
+            <CardTitle className="text-3xl font-medium tracking-tight text-violet-600 sm:text-4xl text-center">
+              {editId ? "Edit Application" : schema.title}
             </CardTitle>
-            <CardDescription className="text-base text-center font-normal text-zinc-500">
-              {schema.description}
+            <CardDescription className="text-base font-normal text-zinc-500 text-center">
+              {editId
+                ? `Updating submission #${editId.slice(0, 8)}`
+                : schema.description}
             </CardDescription>
           </div>
         </CardHeader>
@@ -100,8 +129,8 @@ export default function OnboardingForm() {
             form.handleSubmit();
           }}
         >
-          <CardContent className="px-6 py-4 sm:px-10">
-            <div className="grid gap-4">
+          <CardContent className="px-6 py-10 sm:px-10">
+            <div className="grid gap-6">
               {schema.fields.map((fieldSchema) => (
                 <form.AppField
                   key={fieldSchema.name}
@@ -142,11 +171,24 @@ export default function OnboardingForm() {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => form.reset()}
+              onClick={() => {
+                form.reset();
+                if (editId) {
+                  navigate({
+                    to: "/submissions",
+                    search: {
+                      page: 1,
+                      limit: 10,
+                      sortOrder: "DESC",
+                      q: "",
+                    },
+                  });
+                }
+              }}
               disabled={mutation.isPending}
               className="w-full rounded-none text-zinc-500 hover:bg-transparent hover:text-zinc-900 sm:w-auto cursor-pointer"
             >
-              RESET FORM
+              {editId ? "CANCEL" : "RESET FORM"}
             </Button>
             <Button
               type="submit"
@@ -158,6 +200,8 @@ export default function OnboardingForm() {
                   <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
                   PROCESSING...
                 </span>
+              ) : editId ? (
+                "UPDATE APPLICATION"
               ) : (
                 "SUBMIT APPLICATION"
               )}

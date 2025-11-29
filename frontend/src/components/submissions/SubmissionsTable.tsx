@@ -9,7 +9,7 @@ import {
   type OnChangeFn,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { Eye, ArrowUpDown, Calendar, Trash2 } from "lucide-react";
+import { Eye, ArrowUpDown, Calendar, Trash2, Edit2 } from "lucide-react";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useSearch, useNavigate } from "@tanstack/react-router";
@@ -150,6 +150,20 @@ export function SubmissionsTable() {
       header: "Actions",
       cell: (props) => (
         <div className="flex justify-end gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              navigate({
+                to: "/edit/$submissionId",
+                params: { submissionId: props.row.original.id },
+              });
+            }}
+            className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+            title="Edit"
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
           <Button
             size="sm"
             variant="ghost"

@@ -38,3 +38,17 @@ export const useSubmissions = (params: UseSubmissionsParams) => {
     placeholderData: (previousData) => previousData,
   });
 };
+
+export const useSubmission = (id?: string) => {
+  return useQuery({
+    queryKey: ["submission", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get<{ success: boolean; data: Submission }>(
+        `/submissions/${id}`
+      );
+      return data.data;
+    },
+    enabled: !!id,
+  });
+};

@@ -174,7 +174,7 @@ export function SelectField({ schema }: { schema: TextFieldSchema }) {
     <FieldWrapper schema={schema}>
       <Select
         value={field.state.value ?? ""}
-        onValueChange={field.handleChange}
+        onValueChange={(val) => val && field.handleChange(val)}
       >
         <SelectTrigger
           className={`${INPUT_BASE} ${hasError ? INPUT_ERROR : ""} py-6`}
