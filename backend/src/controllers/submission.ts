@@ -53,6 +53,25 @@ export const getSubmissions = (req: Request, res: Response) => {
   }
 };
 
+export const getSubmissionById = (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const submission = SubmissionModel.findById(id);
+
+    if (!submission) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Submission not found" });
+    }
+
+    res.json({ success: true, data: submission });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch submission" });
+  }
+};
+
 export const deleteSubmission = (req: Request, res: Response) => {
   try {
     const { id } = req.params;

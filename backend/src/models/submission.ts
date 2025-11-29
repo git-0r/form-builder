@@ -13,6 +13,9 @@ const insertStmt = db.prepare(
 const deleteStmt = db.prepare("DELETE FROM submissions WHERE id = ?");
 const updateStmt = db.prepare("UPDATE submissions SET data = ? WHERE id = ?");
 const countStmt = db.prepare("SELECT COUNT(*) as total FROM submissions");
+const getByIdStmt = db.prepare(
+  "SELECT id, data, createdAt FROM submissions WHERE id = ?"
+);
 
 export const SubmissionModel = {
   create: (id: string, data: object, createdAt: string) => {
@@ -27,6 +30,15 @@ export const SubmissionModel = {
   delete: (id: string) => {
     const result = deleteStmt.run(id);
     return result.changes > 0;
+  },
+
+  findById: (id: string): SubmissionRecord | undefined => {
+    const row = getByIdStmt.get(id) as any;
+    if (!row) return undefined;
+    return {
+      ...row,
+      data: JSON.parse(row.data),
+    };
   },
 
   findAll: (

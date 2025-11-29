@@ -3,6 +3,7 @@ import { getFormSchema } from "../controllers/form";
 import {
   createSubmission,
   deleteSubmission,
+  getSubmissionById,
   getSubmissions,
   updateSubmission,
 } from "../controllers/submission";
@@ -16,6 +17,8 @@ router.get("/form-schema", getFormSchema);
 router.post("/submissions", validate(submissionSchema), createSubmission);
 
 router.get("/submissions", getSubmissions);
+
+router.get("/submissions/:id", getSubmissionById);
 
 router.delete("/submissions/:id", deleteSubmission);
 
