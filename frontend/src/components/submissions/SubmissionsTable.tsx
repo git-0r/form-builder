@@ -13,8 +13,8 @@ import { Loader2, Eye, ArrowUpDown, Calendar } from "lucide-react";
 import { useSubmissions, type Submission } from "../../hooks/useSubmissions";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import { ViewModal } from "./ViewModal";
 import { Pagination } from "./Pagination";
+import ViewSheet from "./ViewSheet";
 
 const columnHelper = createColumnHelper<Submission>();
 
@@ -178,7 +178,7 @@ export function SubmissionsTable() {
         />
       </Card>
 
-      <ViewModal
+      <ViewSheet
         isOpen={!!selectedSubmission}
         onClose={() => setSelectedSubmission(null)}
         submission={selectedSubmission}
