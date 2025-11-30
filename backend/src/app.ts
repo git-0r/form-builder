@@ -6,6 +6,7 @@ import apiRoutes from "./routes/api";
 
 const app = express();
 
+app.set("trust proxy", 1 /* number of proxies between user and server */);
 app.disable("x-powered-by");
 
 app.use(helmet());
